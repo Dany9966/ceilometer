@@ -21,7 +21,6 @@ import random
 import uuid
 
 from concurrent import futures
-import cotyledon
 from futurist import periodics
 from keystoneauth1 import exceptions as ka_exceptions
 from oslo_config import cfg
@@ -39,6 +38,7 @@ from ceilometer import messaging
 from ceilometer.polling import plugin_base
 from ceilometer.publisher import utils as publisher_utils
 from ceilometer import utils
+from ceilometer import service_base
 
 LOG = log.getLogger(__name__)
 
@@ -224,7 +224,7 @@ class PollingTask(object):
         )
 
 
-class AgentManager(cotyledon.Service):
+class AgentManager(service_base.ServiceBase):
 
     def __init__(self, worker_id, conf, namespaces=None):
         namespaces = namespaces or ['compute', 'central']
@@ -393,6 +393,13 @@ class AgentManager(cotyledon.Service):
         if self.partition_coordinator:
             self.partition_coordinator.stop()
         super(AgentManager, self).terminate()
+
+    def stop(self):
+        if self.started:
+            self.stop_pollsters_tasks()
+            self.heartbeat_timer.stop()
+            self.partition_coordinator.stop()
+        super(AgentManager, self).stop()
 
     def interval_task(self, task):
         # NOTE(sileht): remove the previous keystone client

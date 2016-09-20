@@ -14,10 +14,13 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import sys
+
 import cotyledon
 from cotyledon import oslo_config_glue
 from oslo_config import cfg
 from oslo_log import log
+from oslo_service import service as os_service
 
 from ceilometer.polling import manager
 from ceilometer import service
@@ -78,7 +81,15 @@ def main():
     conf = cfg.ConfigOpts()
     conf.register_cli_opts(CLI_OPTS)
     service.prepare_service(conf=conf)
-    sm = cotyledon.ServiceManager()
-    sm.add(create_polling_service, args=(conf,))
-    oslo_config_glue.setup(sm, conf)
-    sm.run()
+    if sys.platform != 'win32':
+        sm = cotyledon.ServiceManager()
+        sm.add(create_polling_service, args=(conf,))
+        oslo_config_glue.setup(sm, conf)
+        sm.run()
+    else:
+        os_service.launch(
+            conf,
+            manager.AgentManager(
+                0,  # Worker ID
+                conf,
+                conf.polling_namespaces)).wait()

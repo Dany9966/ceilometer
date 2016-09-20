@@ -15,7 +15,6 @@
 # under the License.
 import time
 
-import cotyledon
 from oslo_config import cfg
 from oslo_log import log
 import oslo_messaging
@@ -23,6 +22,7 @@ from stevedore import named
 
 from ceilometer.i18n import _
 from ceilometer import messaging
+from ceilometer import service_base
 
 
 LOG = log.getLogger(__name__)
@@ -73,7 +73,7 @@ EXCHANGES_OPTS = [
 ]
 
 
-class NotificationService(cotyledon.Service):
+class NotificationService(service_base.ServiceBase):
     """Notification service.
 
     When running multiple agents, additional queuing sequence is required for
